@@ -68,7 +68,7 @@ class Connection
     raw "NICK #{nick}"
   end
 
-  def privmsg(channel, message)
+  def message(channel, message)
     raw "PRIVMSG #{channel} :#{message}"
   end
 
@@ -125,19 +125,19 @@ class Connection
         event "join", channel, nick
       end
     # responses
-    when '376' then event "motd.end" # Good event to hook stuff
+    when '376' then event "motd.end|connected" # Good event to hook stuff
     when '332' then event "topic", parse_channel(tokens[3]), body
     when '332' then event "names", parse_channel(tokens[3]), body
     when '366' then event "names.end", parse_channel(tokens[3])
     # errors
-    when "432"  then event "nick_error, nick_error.invalid", parse_nick(tokens[3])
-    when "433"  then event "nick_error, nick_error.in_use", parse_nick(tokens[3])
-    when "436"  then event "nick_error, nick_error.collision", parse_nick(tokens[3])
+    when "432"  then event "nick_error|nick_error.invalid", parse_nick(tokens[3])
+    when "433"  then event "nick_error|nick_error.in_use", parse_nick(tokens[3])
+    when "436"  then event "nick_error|nick_error.collision", parse_nick(tokens[3])
     when "437"  then # Netsplit time out protection
       if tokens[3] =~ %r"^[#%%&+]"
-        event "channel_error, channel_error.unavailable", parse_channel(tokens[3])
+        event "channel_error|channel_error.unavailable", parse_channel(tokens[3])
       else
-        event "nick_error, nick_error.unavailable", parse_nick(tokens[3])
+        event "nick_error|nick_error.unavailable", parse_nick(tokens[3])
       end
     else
       event "connection.unknown_packet", str

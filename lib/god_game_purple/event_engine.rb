@@ -10,7 +10,7 @@ class EventEngine
 
   def fire(events, *args)
     each_event(events) do |name|
-      @events[name].each{|p| p.call(*args) }
+      @events[name].each{|p| safe_call name, p, *args }
       @events[:*].each{|p| p.call(name, *args) } if @debug
     end
   end
@@ -57,7 +57,14 @@ class EventEngine
 
   private
   def each_event(events, &blk)
-    events.split(',').map{|name| name.strip.to_sym }.each(&blk)
+    events.split('|').map{|name| name.strip.to_sym }.each(&blk)
+  end
+
+  def safe_call(event, blk, *args)
+    blk.call *args
+  rescue StandardError => e
+    raise if event == :handled_exception
+    fire "handled_exception", e.class.name, e.message, e.backtrace
   end
 end
 end

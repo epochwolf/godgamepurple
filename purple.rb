@@ -11,15 +11,20 @@ auto_join = config.delete("channels")
 
 
 connection = GodGamePurple::Connection.new(config)
-event_engine = connection.event_engine
+connection.enable_event_trace!
 
-event_engine.bind("motd_end") do 
+event_engine = connection.event_engine
+plugin_manger = GodGamePurple::PluginManager.new(connection, File.dirname(__FILE__)+"/plugins")
+  
+event_engine.bind("connected") do 
   connection.join auto_join
 end
 
-event_engine.bind("privmsg.action") do |channel, nick, message|
-  connection.action channel, "waves back" if message == "waves"
+event_engine.bind("handled_exception") do |klass, message, trace|
+  puts
+  puts "ERROR: #{klass} -> #{message}"
+  puts trace
+  puts
 end
 
-connection.enable_event_trace!
 connection.run!
