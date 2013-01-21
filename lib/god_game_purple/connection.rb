@@ -107,17 +107,25 @@ class Connection
       nick = parse_nick tokens[0]
       channel = parse_channel tokens[2]
       if body.start_with?("\x01ACTION")
-        event "privmsg.action", channel, nick, body[8..-2] # the end of the body has a \x01 on it
+        event "action", channel, nick, body[8..-2] # the end of the body has a \x01 on it
       else
         if body.start_with?(trigger)
           cmd, *args = body[trigger.length..-1].split(' ')
-          event "privmsg.command", cmd, channel, nick, *args
+          event "command", cmd, channel, nick, *args
         else
-          event "privmsg", channel, nick, body
+          event "message", channel, nick, body
         end
       end
+    when 'JOIN' then 
+      nick = parse_nick(tokens[0])
+      channel = parse_channel(tokens[2])
+      if self.nick == nick.name
+        event "join.self", channel
+      else
+        event "join", channel, nick
+      end
     # responses
-    when '376' then event "motd_end" # Good event to hook stuff
+    when '376' then event "motd.end" # Good event to hook stuff
     when '332' then event "topic", parse_channel(tokens[3]), body
     when '332' then event "names", parse_channel(tokens[3]), body
     when '366' then event "names.end", parse_channel(tokens[3])
@@ -180,7 +188,7 @@ class Connection
     return false unless tokens[0] == "PING"
     server = tokens[2]
     raw "PONG #{server}"
-    event "ping", server, last_ping
+    event "ping", server, @last_ping
     @last_ping = Time.now
     return true
   end
