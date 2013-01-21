@@ -1,0 +1,7 @@
+server: 'irc.freenode.net'
+port: '6667'
+nick: 'chanserv'
+trigger: '!'
+debug: false
+channels:
+  - '#politics'
