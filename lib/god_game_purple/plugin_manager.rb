@@ -16,6 +16,10 @@ class PluginManager
     @commands.keys
   end
 
+  def plugins
+    @plugins.dup
+  end
+
   def add_command(name, blk)
     if @commands[name]
       event_engine.fire "plugin.warning", "Command #{name} already registered by another plugin."
@@ -41,11 +45,11 @@ class PluginManager
   end
 
   def load_plugin(name)
-    @plugins[name].try(:load!)
+    plugin = @plugins[name] and plugin.load!
   end
 
   def unload_plugin(name)
-    @plugins[name].try(:unload!)
+    plugin = @plugins[name] and plugin.unload!
   end
 
   def reload_plugins!

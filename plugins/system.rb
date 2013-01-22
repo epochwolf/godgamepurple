@@ -50,20 +50,20 @@ command "about" do |c, n|
   connection.message c, "GodGamePurple 0.0.1 https://github.com/epochwolf/godgamepurple"
 end
 
-command "plugins" do |channel, nick, action, plugin|
+command "plugins" do |c, n, action, plugin|
   case action
   when "load"
     plugin_manager.load_plugin plugin
   when "unload"
     plugin_manager.unload_plugin plugin
   when "info"
-    if plugin = plugin_manger.plugins[plugin]
+    if plugin = plugin_manager.plugins[plugin]
       message c, "#{plugin.name} provides: #{plugin.commands.keys.join ", "}"
     else
       message c, "No plugin by that name."
     end
   when "list"
-    message c, "Plugins: #{plugin_manger.plugins.keys.join ", "}"
+    message c, "Plugins: #{plugin_manager.plugins.keys.join ", "}"
   else 
     message c, "Available sub commands: load [plugin], unload [plugin], info [plugin], list"
   end
