@@ -6,6 +6,7 @@ class PluginDsl
     instance_eval File.read(file), file
   end
 
+  # bot internals
   def plugin
     @plugin
   end
@@ -22,6 +23,7 @@ class PluginDsl
     plugin.manager.event_engine
   end
 
+  # meta data
   def plugin_name(name)
     plugin.name = name
   end
@@ -38,6 +40,11 @@ class PluginDsl
     plugin.description = description
   end
 
+  def plugin_config(filename)
+    @_config = {}
+  end
+
+  # definitions
   def on(event_name, &blk)
     plugin.add_event(event_name, blk)
   end
@@ -60,6 +67,35 @@ class PluginDsl
 
   def uncommand(cmd_name)
     plugin.remove_command(cmd_name)
+  end
+
+  # useful commands
+  def message(channel, message)
+    connection.message channel, message
+  end
+
+  def action(channel, message)
+    connection.action channel, message
+  end
+
+  def join(channel)
+    connection.join channel
+  end
+
+  def part(channel)
+    connection.part channel
+  end
+
+  def kv_read(key)
+    @_config[key]
+  end
+
+  def kv_write(key, value)
+    if value == nil
+      @_config.delete(key)
+    else
+      @_config[key] = value
+    end
   end
 end
 end

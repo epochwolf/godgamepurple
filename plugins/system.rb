@@ -5,6 +5,10 @@ plugin_description  "Provides basic admin functions to the bot"
 
 @last_seen = {}
 
+def admin?(nick)
+  %w[epochwolf].include? nick.name 
+end
+
 # Available data objects
 # connection - current connection
 # plugin_manager - plugin manager
@@ -16,19 +20,51 @@ command "commands" do |channel, nick, *args|
   connection.message channel, "Commands: #{plugin_manager.commands.keys.sort.join(', ')}"
 end
 
+command "join" do |_, nick, channel|
+  unless channel.nil?
+    if admin?(nick)
+      message _, "Okay"
+      join channel
+    else
+      message _, "Nope."
+    end
+  else
+    action _, "stares blankly"
+  end
+end
+
+command "part" do |_, nick, channel|
+  if admin?(nick)
+    message _, "Okay"
+    part channel || _
+  else
+    message _, "Nope."
+  end
+end
+
+command "quit" do |channel, nick|
+  message channel, "I hope you enjoy my company. I'm not programmed for suicide."
+end
+
 command "author" do |channel, nick, *args|
   connection.message channel, "Author: #{plugin.author}"
 end
 
-help "slap($target)", "Hit $target with a trout."
-command "slap" do |channel, nick, target, *args|
-  connection.action channel, "smacks the everliving shit out of #{target}."
-end
-
-on "join.self" do |channel|
-  connection.message channel, "Hi everyone!"
-end
-
-on "join" do |channel, nick|
-  channel.action "welcomes #{nick}!"
+command "plugins" do |channel, nick, action, plugin|
+  case action
+  when "load"
+    plugin_manager.load_plugin plugin
+  when "unload"
+    plugin_manager.unload_plugin plugin
+  when "info"
+    if plugin = plugin_manger.plugins[plugin]
+      message c, "#{plugin.name} provides: #{plugin.commands.keys.join ", "}"
+    else
+      message c, "No plugin by that name."
+    end
+  when "list"
+    message c, "Plugins: #{plugin_manger.plugins.keys.join ", "}"
+  else 
+    message c, "Available sub commands: load [plugin], unload [plugin], info [plugin], list"
+  end
 end
