@@ -10,7 +10,7 @@ class EventEngine
 
   def fire(events, *args)
     each_event(events) do |name|
-      @events[name].each{|p| safe_call name, p, *args }
+      @events[name].to_a.each{|p| safe_call name, p, *args }
       @events[:*].each{|p| p.call(name, *args) } if @debug
     end
   end

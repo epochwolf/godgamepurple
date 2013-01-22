@@ -46,8 +46,8 @@ command "quit" do |channel, nick|
   message channel, "I hope you enjoy my company. I'm not programmed for suicide."
 end
 
-command "author" do |channel, nick, *args|
-  connection.message channel, "Author: #{plugin.author}"
+command "about" do |c, n|
+  connection.message c, "GodGamePurple 0.0.1 https://github.com/epochwolf/godgamepurple"
 end
 
 command "plugins" do |channel, nick, action, plugin|

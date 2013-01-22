@@ -5,10 +5,10 @@ class Connection
   attr_reader :server, :port, :nick, :username, :realname, :password, :event_engine, :debug, :trigger
 
   def initialize(options={})
-    @server   = options["server"]    or raise ArgumentError, "Missing server option"
-    @port     = options["port"]      or "6667"
-    @nick     = options["nick"]      or raise ArgumentError, "Missing nick option"
-    @username = options["username"]  or "purple"
+    @server   = options["server"]    || raise(ArgumentError, "Missing server option")
+    @port     = options["port"]      || "6667"
+    @nick     = options["nick"]      || raise(ArgumentError, "Missing nick option")
+    @username = options["username"]  || "purple"
     @realname = "Game God Purple"
     @password = options["password"]
     @debug    = options["debug"]
@@ -52,7 +52,7 @@ class Connection
   def handshake!
     raw "PASS #{password}" if password
     change_nick(nick)
-    raw "USER #{nick} #{username} example.com #{server} :#{realname}"
+    raw "USER #{username} example.com #{server} :#{realname}"
   end
 
   def quit(message)
