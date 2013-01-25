@@ -6,7 +6,7 @@ plugin_description  "Provides basic admin functions to the bot"
 @last_seen = {}
 
 def admin?(nick)
-  %w[epochwolf].include? nick.name 
+  nick.admin?
 end
 
 # Available data objects
@@ -16,55 +16,94 @@ end
 # plugin - current plugin
 
 help "commands", "Provides a list of commands."
-command "commands" do |channel, nick, *args|
-  connection.message channel, "Commands: #{plugin_manager.commands.keys.sort.join(', ')}"
+command "commands" do |c, n, *args|
+  connection.message c, "Commands: #{plugin_manager.commands.keys.sort.join(', ')}"
 end
 
-command "join" do |_, nick, channel|
+command "join" do |c, n, channel|
   unless channel.nil?
-    if admin?(nick)
-      message _, "Okay"
+    if n.admin?
+      message c, "Okay"
       join channel
     else
-      message _, "Nope."
+      message c, "Nope."
     end
   else
-    action _, "stares blankly"
+    action c, "stares blankly"
   end
 end
 
-command "part" do |_, nick, channel|
-  if admin?(nick)
-    message _, "Okay"
-    part channel || _
+command "part" do |c, n, channel|
+  if n.admin?
+    message c, "Okay"
+    part channel || c
   else
-    message _, "Nope."
+    message c, "Nope."
   end
 end
 
-command "quit" do |channel, nick|
-  message channel, "I hope you enjoy my company. I'm not programmed for suicide."
+command "quit" do |c, n|
+  message c, "I hope you enjoy my company. I'm not programmed for suicide."
 end
 
 command "about" do |c, n|
   connection.message c, "GodGamePurple 0.0.1 https://github.com/epochwolf/godgamepurple"
 end
 
-command "plugins" do |c, n, action, plugin|
+command "plugin" do |c, n, action, plugin|
   case action
-  when "load"
-    plugin_manager.load_plugin plugin
-  when "unload"
-    plugin_manager.unload_plugin plugin
-  when "info"
-    if plugin = plugin_manager.plugins[plugin]
-      message c, "#{plugin.name} provides: #{plugin.commands.keys.join ", "}"
-    else
-      message c, "No plugin by that name."
-    end
-  when "list"
-    message c, "Plugins: #{plugin_manager.plugins.keys.join ", "}"
+  when "load" then   cmd_plugin_load(c, n, action, plugin)
+  when "unload" then cmd_plugin_unload(c, n, action, plugin)
+  when "info" then   cmd_plugin_info(c, n, action, plugin)
+  when "list" then   cmd_plugin_list(c, n, action, plugin)
   else 
     message c, "Available sub commands: load [plugin], unload [plugin], info [plugin], list"
   end
+end
+
+
+def plugin_exists?(plugin)
+  if plugin_manager.plugins[plugin]
+    true
+  else
+    message c, "I couldn't find a plugin named \"#{plugin}\"."
+    false
+  end
+end
+
+def plugin_admin?(n)
+  if n.admin?
+    true
+  else
+    message c, "You don't get to play with my fiddly bits."
+    false
+  end
+end
+
+def cmd_plugin_load(c, n, action, plugin)
+  return unless plugin_admin?(n)
+  return unless plugin_exists?(plugin)
+  plugin_manager.load_plugin plugin
+  message c, "Okay"
+end
+
+def cmd_plugin_unload(c, n, action, plugin)
+  return unless plugin_admin?(n)
+  return unless plugin_exists?(plugin)
+  if ["system", "_reloader"].include?(plugin)
+    plugin_manager.unload_plugin plugin
+    message c, "Okay"
+  else
+    message c, "Um. That's a bad idea."
+  end
+end
+
+def cmd_plugin_list(c, n, action, plugin)
+  list = plugin_manager.plugins.map{|k, v| v.loaded? ? "#{k}" : "~#{k}"}.join ", "
+  message c, "Plugins: #{list}"
+end
+
+def cmd_plugin_info(c, n, action, plugin)
+  return unless plugin_exists?(plugin)
+  message c, "#{plugin.name} provides: #{plugin.commands.keys.join ", "}"
 end

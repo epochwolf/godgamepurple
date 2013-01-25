@@ -63,10 +63,9 @@ class Plugin
   def load_plugin_file!
     @dsl = PluginDsl.new(self, @filename)
     @loaded = true
-  # rescue StandardError => e
-  #   @manager.event_engine.fire("plugin.error", @short_name, e.class.name, e.message, e.backtrace)
-  #   @loaded = false
-  #   @loadable = false
+  rescue StandardError => e
+    @manager.event_engine.fire("plugin.error", @short_name, e.class.name, e.message, e.backtrace)
+    @loaded = false
   end
 end
 end

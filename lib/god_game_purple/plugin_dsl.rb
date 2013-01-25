@@ -1,6 +1,5 @@
 module GodGamePurple
 class PluginDsl
-  attr_accessor :name, :version, :author, :description
   def initialize(plugin, file)
     @plugin = plugin
     instance_eval File.read(file), file
@@ -42,6 +41,7 @@ class PluginDsl
 
   def plugin_config(filename)
     @_config = {}
+    _kv_load!(filename)
   end
 
   # definitions
@@ -84,18 +84,6 @@ class PluginDsl
 
   def part(channel)
     connection.part channel
-  end
-
-  def kv_read(key)
-    @_config[key]
-  end
-
-  def kv_write(key, value)
-    if value == nil
-      @_config.delete(key)
-    else
-      @_config[key] = value
-    end
   end
 end
 end

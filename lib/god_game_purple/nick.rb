@@ -17,5 +17,9 @@ class Nick
   def to_sym(*args)
     to_s(*args).to_sym
   end
+
+  def admin?
+    name == "epochwolf"
+  end
 end
 end
