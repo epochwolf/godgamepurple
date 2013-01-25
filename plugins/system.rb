@@ -90,7 +90,7 @@ end
 def cmd_plugin_unload(c, n, action, plugin)
   return unless plugin_admin?(n)
   return unless plugin_exists?(plugin)
-  if ["system", "_reloader"].include?(plugin)
+  unless ["system", "_reloader"].include?(plugin)
     plugin_manager.unload_plugin plugin
     message c, "Okay"
   else
