@@ -6,38 +6,46 @@ plugin_description  "Add custom commands to the bot"
 @tips = KeyValueStore.new("plugins/tips.json")
 
 command "add" do |c, n, tip, *msg|
-  msg = msg.join " "
-  if plugin_manager.commands.include? tip
-    message c, "Already have a command with that name. Try something else?"
-  elsif @tips[tip]
-    message c, "Bummer, someone else beat you to it!"
-  else 
-    @tips[tip] = msg
-    message c, "Tip added."    
-  end
+  add_tip(c, n, tip, *msg)
 end
 
 command "remove" do |c, n, tip|
-  if n.admin?  
-    if plugin_manager.commands.include? tip
-      message c, "I'm rather attached to my commands. I'll have to decline."
-    elsif @tips[tip]
-      @tips[tip] = nil
-      message c, "Tip removed."
-    else
-      message c, "No tip by tha... ahem. Tip removed. :)"
-    end
-  else
-    message c, "I am disinclined to acquiesce to your request"
-  end
+  remove_tip(c, n, tip)
 end
 
-command "tips" do |c, n|
+command "tip" do |c, n, subcommand, tip, *args|
+  case subcommand
+  when "a", "add"    then add_tip(c, n, tip, *args)
+  when "r", "remove" then remove_tip(c, n, tip)
+  when "s", "show"   then show_tip(c, n, tip)
+  when "c", "count"  then count_tip(c, n)
+  when 'd', 'debug'  then puts @tips.inspect
+  else message c, "Available sub commands: add [name] [message], remove [name], show [name], count"
+  end 
+end
+
+def add_tip(c, n, tip, *msg)
+  return message(c, "Already have a command with that name. Try something else?") if plugin_manager.commands.include? tip
+  return message(c, "Bummer, someone else beat you to it!") if @tips[tip]
+  @tips[tip] = msg.join " "
+  message c, "Tip added."
+end
+
+def remove_tip(c, n, tip)
+  return message(c, "I am disinclined to acquiesce to your request") if n.admin?  
+  return message(c, "I'm rather attached to my commands. I'll have to decline.") if plugin_manager.commands.include? tip
+  return message(c, "No tip by tha... ahem. Tip removed. :)") unless @tips[tip]
+  @tips[tip] = nil
+  message c, "Tip removed."
+end
+
+def show_tip(c, n, tip)
+  return message(c, "No tip by that name.") unless msg = @tips[tip]
+  message c, "#{tip}: #{msg}"
+end
+
+def count_tip(c, n)
   message c, "There are #{@tips.count} tips in the system."
-end
-
-command "debugtips" do |c, n|
-  puts @tips.inspect
 end
 
 on "command" do |cmd, c, n, *args|
@@ -50,7 +58,6 @@ on "command" do |cmd, c, n, *args|
   else 
     message c, msg
   end
-
 end
 
 def format_message(msg, c, n, *args) 
