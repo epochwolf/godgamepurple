@@ -41,10 +41,23 @@ command "debugtips" do |c, n|
 end
 
 on "command" do |cmd, c, n, *args|
-  puts "Tips: cmd"
   next if plugin_manager.commands.include? cmd
-  puts "Tips: not a command, looking up"
-  if msg = @tips[cmd]
+  next unless msg = @tips[cmd]
+
+  msg = format_message(msg, c, n, *args)
+  if msg =~ %r(^/me ) then 
+    action c, msg[4..-1]
+  else 
     message c, msg
+  end
+
+end
+
+def format_message(msg, c, n, *args) 
+  msg.dup.tap do |m|
+    m.gsub!("{nick}", n.to_s)
+    m.gsub!("{channel}", c.to_s)
+    args.each_with_index{|v, i| m.gsub!("{arg#{i+1}}", v) }
+    #m.gsub!(/\{arg\d+\}/, n.to_s)
   end
 end
