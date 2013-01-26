@@ -32,7 +32,7 @@ def add_tip(c, n, tip, *msg)
 end
 
 def remove_tip(c, n, tip)
-  return message(c, "I am disinclined to acquiesce to your request") if n.admin?  
+  return message(c, "I am disinclined to acquiesce to your request") unless n.admin?  
   return message(c, "I'm rather attached to my commands. I'll have to decline.") if plugin_manager.commands.include? tip
   return message(c, "No tip by tha... ahem. Tip removed. :)") unless @tips[tip]
   @tips[tip] = nil
