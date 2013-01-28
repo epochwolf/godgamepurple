@@ -39,7 +39,7 @@ Thread.start do
     end
   end
   my_app.run!
+  exit
 end 
-
 
 connection.run!
