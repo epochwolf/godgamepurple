@@ -19,7 +19,7 @@ class Nick
   end
 
   def admin?
-    name == "epochwolf"
+    name == "epochwolf" || name == "namidark"
   end
 end
 end
