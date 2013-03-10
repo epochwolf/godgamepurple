@@ -2,6 +2,7 @@ plugin_name         "Reloader"
 plugin_author       "epochwolf"
 plugin_version      "0.0.1"
 plugin_description  "Allows the user to reload plugins"
+plugin_autoload     true
 
 # This is a separate file so core plugins can be edited without causing too much mayhem.
 

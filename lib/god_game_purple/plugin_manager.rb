@@ -34,14 +34,14 @@ class PluginManager
     @event_engine.fire "manager.command_removed", name
   end
 
-  def add_event(name, blk)
-    @event_engine.bind name, &blk
-    @event_engine.fire "manager.add_event", name, blk
+  def add_event(event_object)
+    @event_engine.add event_object
+    @event_engine.fire "manager.add_event", event_object.names.join("|"), event_object.block
   end 
 
-  def remove_event(name, blk)
-    @event_engine.unbind name, blk
-    @event_engine.fire "manager.remove_event", name, blk
+  def remove_event(event_object)
+    @event_engine.remove event_object
+    @event_engine.fire "manager.remove_event", event_object.names.join("|"), event_object.block
   end
 
   def load_plugin(name)

@@ -11,15 +11,19 @@ class PluginDsl
   end
 
   def plugin_manager
-    plugin.manager
+    @_plugin_manager ||= plugin.manager
+  end
+
+  def bot_config 
+    @_bot_config ||= connection.config
   end
 
   def connection 
-    plugin_manager.connection
+    @_connection ||=plugin_manager.connection
   end
 
   def event_engine
-    plugin.manager.event_engine
+    @_event_engine ||= plugin.manager.event_engine
   end
 
   # meta data
@@ -39,22 +43,27 @@ class PluginDsl
     plugin.description = description
   end
 
+  def plugin_autoload(autoload)
+    plugin.autoload = autoload
+  end
+
   def plugin_config(filename)
     @_config = {}
     _kv_load!(filename)
   end
 
   # definitions
-  def on(event_name, &blk)
-    plugin.add_event(event_name, blk)
+  def on(event_name, options={}, &blk)
+    plugin.add_event(event_name, options, blk)
   end
 
-  def once(event_name, &blk)
-    warn "once isn't supported"
+  def once(event_name, options={}, &blk)
+    options[:fire_once] = true
+    on(event_name, options, &blk)
   end
 
-  def off(event_name, blk)
-    plugin.remove_event(event_name, blk)
+  def off(event_object)
+    plugin.remove_event(event_object)
   end
 
   def help(cmd_name, description)

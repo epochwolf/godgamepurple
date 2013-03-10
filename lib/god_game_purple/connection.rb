@@ -1,18 +1,52 @@
 require 'socket'
 
 module GodGamePurple
-class Connection
-  attr_reader :server, :port, :nick, :username, :realname, :password, :event_engine, :debug, :trigger
+class ConnectionConfig
+  attr_reader :server 
+  attr_reader :port # default: 6667
+  attr_reader :ssl  # default: false
+  attr_reader :preferred_nick 
+  attr_reader :current_nick 
+  attr_reader :username
+  attr_reader :realname
+  attr_reader :password
+  attr_reader :trigger
 
-  def initialize(options={})
+  def initialize(options)
+    options = Hash[options.map{|k, v| [k.to_s, v] }] # Easier than including ActiveFuckingSupport
     @server   = options["server"]    || raise(ArgumentError, "Missing server option")
     @port     = options["port"]      || "6667"
-    @nick     = options["nick"]      || raise(ArgumentError, "Missing nick option")
+    @ssl      = options["ssl"]
+    @nick     = options["nick"]      || options["preferred_nick"] || raise(ArgumentError, "Missing nick option")
     @username = options["username"]  || "purple"
-    @realname = "Game God Purple"
+    @realname = options["realname"]  || "Game God Purple"
     @password = options["password"]
-    @debug    = options["debug"]
     @trigger  = options["trigger"]
+
+    raise(NotImplementedError, "SSL is not implemented") if @ssl
+    @current_nick = @nick
+  end
+
+  def ssl?
+    @ssl == true
+  end
+
+  # Modifies the current nick. 
+  def alternative_nick!
+    matches = /\|alt(\d*)$/.match(current_nick)
+    @current_nick = if matches
+      "#{@current_nick}|alt#{matches[1].to_i + 1}"
+    else
+      "#{@current_nick}|alt"
+    end
+  end
+end
+
+class Connection
+  attr_reader :config, :event_engine, :debug
+
+  def initialize(config={}, options={})
+    @config = ConnectionConfig === config ? config : ConnectionConfig.new(config)
     @nicks = {}
     @channels = {}
     @event_engine = options[:event_engine] || GodGamePurple::EventEngine.new(debug: options[:debug])
@@ -31,7 +65,7 @@ class Connection
   def connect!
     @last_ping = Time.now
     @socket.close if @socket
-    @socket = TCPSocket.open(server, port)
+    @socket = TCPSocket.open(config.server, config.port)
   rescue SystemCallError => e
     puts "Unable to connect: #{e.message}"
     exit
@@ -50,9 +84,9 @@ class Connection
   end
 
   def handshake!
-    raw "PASS #{password}" if password
-    change_nick(nick)
-    raw "USER #{username} example.com #{server} :#{realname}"
+    raw "PASS #{config.password}" if config.password
+    change_nick(config.current_nick)
+    raw "USER #{config.username} example.com #{config.server} :#{config.realname}"
   end
 
   def quit(message)
@@ -109,8 +143,8 @@ class Connection
       if body.start_with?("\x01ACTION")
         event "action", channel, nick, body[8..-2] # the end of the body has a \x01 on it
       else
-        if body.start_with?(trigger)
-          cmd, *args = body[trigger.length..-1].split(' ')
+        if body.start_with?(config.trigger)
+          cmd, *args = body[config.trigger.length..-1].split(' ')
           event "command", cmd, channel, nick, *args
         else
           event "message", channel, nick, body
@@ -119,7 +153,7 @@ class Connection
     when 'JOIN' then 
       nick = parse_nick(tokens[0])
       channel = parse_channel(tokens[2])
-      if self.nick == nick.name
+      if config.current_nick == nick.name
         event "join.self", channel
       else
         event "join", channel, nick
@@ -147,7 +181,7 @@ class Connection
   def enable_debug!
     @debug = true
     event_engine.enable_debug!
-    event_engine.bind("connection.open"       ){ debug "Connection opened to #{server} on port #{port}" }
+    event_engine.bind("connection.open"       ){ debug "Connection opened to #{config.server} on port #{config.port}" }
     event_engine.bind("connection.send"       ){|str| debug " Server << #{str}" }
     event_engine.bind("connection.send_error" ){|str| debug " Server <<ERR #{str} " }
     event_engine.bind("connection.receive"    ){|str| debug " Server >> #{str}" }

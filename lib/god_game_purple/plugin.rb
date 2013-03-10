@@ -1,6 +1,6 @@
 module GodGamePurple
 class Plugin
-  attr_accessor :short_name, :name, :version, :author, :description, :manager
+  attr_accessor :short_name, :name, :version, :author, :description, :manager, :autoload
 
   def initialize(manager, file)
     @filename = file
@@ -8,6 +8,7 @@ class Plugin
     @manager = manager
     @commands = {}
     @events = []
+    @autoload = true
     @loaded = false
     @loadable = true
     load!
@@ -19,7 +20,7 @@ class Plugin
 
   def add_command(name, blk)
     @commands[name] = blk
-    @manager.add_command(name, blk)
+    @manager.add_command(name, blk) if @loaded || @autoload
     @manager.event_engine.fire "plugin.add_command", short_name, name, blk
   end
 
@@ -29,15 +30,16 @@ class Plugin
     @manager.event_engine.fire "plugin.remove_command", short_name, name
   end
 
-  def add_event(name, blk)
-    @events << [name, blk]
-    @manager.add_event(name, blk)
+  def add_event(name, options, blk)
+    e = Event.new(name, options, &blk)
+    @events << e
+    @manager.add_event(e) if @loaded || @autoload
     @manager.event_engine.fire "plugin.add_event", short_name, name, blk
   end
 
-  def remove_event(name, blk)
-    @manager.remove_event(name, blk)
-    @events.delete([name, blk])
+  def remove_event(event_object)
+    @manager.remove_event(event_object)
+    @events.delete(event_object)
     @manager.event_engine.fire "plugin.remove_event", short_name, name, blk
   end
 
@@ -54,7 +56,7 @@ class Plugin
   def unload!
     return unless @loaded
     @commands.keys.each{|key| remove_command key }
-    @events.dup.each{|name_blk| remove_event *name_blk }
+    @events.dup.each{|event_object| remove_event *event_object }
     @loaded = false
     @manager.event_engine.fire "plugin.unloaded", short_name
   end
@@ -62,7 +64,8 @@ class Plugin
   protected
   def load_plugin_file!
     @dsl = PluginDsl.new(self, @filename)
-    @loaded = true
+    @manager.event_engine.fire "plugin.parsed", short_name
+    @loaded = @autoload
   rescue StandardError => e
     @manager.event_engine.fire("plugin.error", @short_name, e.class.name, e.message, e.backtrace)
     @loaded = false
